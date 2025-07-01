@@ -79,11 +79,17 @@ const Dashboard = () => {
       let cleaned = formatted.replace(/^[•\-*]\s*$/gm, '').replace(/^([A-Z])$/gm, '').replace(/\n{2,}/g, '\n');
       // Split on patterns like 'Analyte (value):', '*', or double newlines
       let points = cleaned.split(/(?=[A-Z][a-zA-Z ]+\([^)]+\):)|\*|\n\n|\n|•/).map(p => p.trim()).filter(p => p && p.length > 2);
-      formatted = points.map(point => `<div class="mb-2 flex items-start"><span class="mr-2 text-medical-600">•</span><span>${point}</span></div>`).join('');
+      // Use <ul> and <li> for better bullet formatting
+      if (points.length > 1) {
+        formatted = `<ul class='list-disc pl-6 space-y-2'>${points.map(point => `<li>${point}</li>`).join('')}</ul>`;
+      } else {
+        formatted = points.map(point => `<div class='mb-2 flex items-start'><span class='mr-2 text-medical-600'>•</span><span>${point}</span></div>`).join('');
+      }
       formatted = formatted.replace(/(Vitamin D|HbA1c|HDL|LDL|BMI|CBC|CMP)/gi, '<span style="white-space: nowrap;">$1</span>');
     }
     
-    if (!formatted.includes('<p>') && !formatted.includes('<div')) {
+    // Add extra spacing for all sections
+    if (!formatted.includes('<p>') && !formatted.includes('<div') && !formatted.includes('<ul')) {
       formatted = `<p class="mb-3">${formatted}</p>`;
     }
     
@@ -339,7 +345,7 @@ const Dashboard = () => {
   const renderSection = (title, content, sectionKey, icon, color = 'blue', number = 1) => {
     const isExpanded = expandedSections[sectionKey];
     return (
-      <div key={sectionKey} className="bg-white rounded-xl shadow-sm border border-medical-200 overflow-hidden mb-4">
+      <div key={sectionKey} className="bg-white rounded-xl shadow-sm border border-medical-200 overflow-hidden mb-8">
         <button
           onClick={() => setExpandedSections(prev => ({ ...prev, [sectionKey]: !prev[sectionKey] }))}
           className="w-full px-6 py-4 flex items-center justify-between bg-gradient-to-r from-medical-50 to-white hover:from-medical-100 transition-all duration-200"
@@ -355,7 +361,7 @@ const Dashboard = () => {
           )}
         </button>
         {isExpanded && (
-          <div className="px-6 pb-6">
+          <div className={`px-6 pb-8 pt-2 bg-medical-50`}>
             <div 
               className={`prose prose-medical max-w-none ${
                 sectionKey === 'insights' 

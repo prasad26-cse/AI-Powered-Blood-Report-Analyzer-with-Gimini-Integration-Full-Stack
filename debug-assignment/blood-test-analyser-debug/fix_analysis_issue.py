@@ -10,48 +10,45 @@ This script will:
 import os
 import sys
 from pathlib import Path
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Add current directory to path for imports
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
+CELERY_APP_PATH = "debug-assignment/blood-test-analyser-debug/celery_app.py"
+
 def fix_gemini_configuration():
     """Fix Gemini API key configuration"""
     print("🔧 Fixing Gemini API Configuration...")
-    
-    # The correct API key
-    correct_api_key = "AIzaSyCp1PLO5Sowk0ladBV_BF8E8k2iwwU2_HY"
-    
-    # Set environment variables
-    os.environ["GEMINI_API_KEY"] = correct_api_key
-    os.environ["GOOGLE_API_KEY"] = correct_api_key
-    
-    print(f"✅ Set GEMINI_API_KEY: {correct_api_key[:10]}...")
-    print(f"✅ Set GOOGLE_API_KEY: {correct_api_key[:10]}...")
-    
-    return True
+    # No hardcoded key, just check env
+    api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+    if api_key:
+        print(f"✅ GEMINI_API_KEY: {api_key[:10]}...")
+        print(f"✅ GOOGLE_API_KEY: {api_key[:10]}...")
+        return True
+    else:
+        print("❌ No Gemini API key found in environment!")
+        return False
 
 def test_gemini_connection():
     """Test if Gemini is working with the API key"""
     print("\n🔍 Testing Gemini Connection...")
-    
     try:
         import google.generativeai as genai
         from google.generativeai.generative_models import GenerativeModel
-        
-        # Configure with the correct API key
-        api_key = "AIzaSyCp1PLO5Sowk0ladBV_BF8E8k2iwwU2_HY"
-        os.environ["GOOGLE_API_KEY"] = api_key
-        
-        # Create model
+        # Use environment variable
+        api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+        if not api_key:
+            print("❌ No Gemini API key found in environment!")
+            return False
+        print(f"[Gemini] API key loaded: {api_key[:6]}...{api_key[-2:]}")
         model = GenerativeModel('gemini-1.5-flash')
-        
-        # Test simple response
         response = model.generate_content("Hello! Please respond with 'Gemini is working correctly!'")
-        
         print("✅ Gemini connection successful!")
         print(f"Response: {response.text}")
         return True
-        
     except Exception as e:
         print(f"❌ Gemini connection failed: {e}")
         return False
@@ -172,6 +169,8 @@ Enhanced simple analysis using Gemini AI
 """
 
 import os
+from dotenv import load_dotenv
+load_dotenv()
 import google.generativeai as genai
 from google.generativeai.generative_models import GenerativeModel
 import PyPDF2
@@ -179,13 +178,14 @@ import PyPDF2
 def enhanced_simple_blood_analysis(file_path: str, query: str) -> dict:
     """Enhanced simple analysis using Gemini AI"""
     try:
-        # Set API key
-        api_key = "AIzaSyCp1PLO5Sowk0ladBV_BF8E8k2iwwU2_HY"
-        genai.configure(api_key=api_key)
-        
-        # Create model
+        # Use API key from environment
+        api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+        if not api_key:
+            print("❌ No Gemini API key found in environment!")
+            return {"status": "error", "result": "No Gemini API key found in environment!", "fallback": True}
+        print(f"[Gemini] API key loaded: {api_key[:6]}...{api_key[-2:]}")
+        # The latest SDK uses the environment variable, no need to set in code
         model = GenerativeModel('gemini-1.5-flash')
-        
         # Extract text from PDF
         try:
             with open(file_path, 'rb') as file:
@@ -196,46 +196,33 @@ def enhanced_simple_blood_analysis(file_path: str, query: str) -> dict:
         except Exception as e:
             print(f"PDF reading error: {e}")
             text_content = "Blood test report content could not be extracted from PDF."
-        
         # Create analysis prompt
         analysis_prompt = f"""
         You are a medical AI assistant. Please analyze this blood test report and provide a comprehensive analysis.
-        
         User Query: {query}
-        
         Blood Test Report Content:
         {text_content[:3000]}  # Limit content length
-        
         Please provide your analysis in this structured format:
-        
         **1. Summary of Key Findings**
         [Provide a brief overview of the blood test results]
-        
         **2. Interpretation of Any Abnormal Values**
         [Explain any values that are outside normal ranges]
-        
         **3. Clinical Significance of Results**
         [Discuss the medical implications of the findings]
-        
         **4. Recommendations for Follow-up**
         [Provide specific recommendations for the patient]
-        
         **5. Overall Health Assessment**
         [Give an overall assessment of the patient's health based on these results]
-        
         Please be thorough, professional, and provide actionable insights.
         """
-        
         # Generate analysis
         response = model.generate_content(analysis_prompt)
-        
         return {
             "status": "processed",
             "result": response.text,
             "fallback": False,
             "confidence_score": 0.95
         }
-        
     except Exception as e:
         print(f"Enhanced analysis error: {e}")
         # Fallback to basic analysis
@@ -246,11 +233,9 @@ def enhanced_simple_blood_analysis(file_path: str, query: str) -> dict:
             "confidence_score": 0.5
         }
 '''
-    
     # Write the enhanced function to a new file
-    with open("enhanced_analysis.py", "w") as f:
+    with open("enhanced_analysis.py", "w", encoding="utf-8") as f:
         f.write(enhanced_analysis_code)
-    
     print("✅ Enhanced analysis function created!")
     return True
 
@@ -260,7 +245,7 @@ def update_celery_app():
     
     try:
         # Read the current celery_app.py
-        with open("celery_app.py", "r") as f:
+        with open(CELERY_APP_PATH, "r") as f:
             content = f.read()
         
         # Replace the simple_blood_analysis import and usage
@@ -275,7 +260,7 @@ def update_celery_app():
         )
         
         # Write the updated content
-        with open("celery_app.py", "w") as f:
+        with open(CELERY_APP_PATH, "w") as f:
             f.write(updated_content)
         
         print("✅ Celery app updated!")

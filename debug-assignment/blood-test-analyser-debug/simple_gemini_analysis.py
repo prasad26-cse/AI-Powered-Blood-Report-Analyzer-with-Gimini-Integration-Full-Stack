@@ -16,10 +16,9 @@ def test_simple_gemini():
     
     # Get API key
     api_key = os.getenv("GEMINI_API_KEY")
-    
     if not api_key:
-        print("❌ GEMINI_API_KEY not found")
-        return False
+        api_key = "AIzaSyA1Dtd982x-3ZYKxfjXGrB-DvHkTqcl940"
+        print("Using provided Gemini API key.")
     
     try:
         # Configure Gemini with API key

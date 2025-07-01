@@ -1,38 +1,36 @@
 #!/usr/bin/env python3
 """
-New comprehensive test script for Gemini AI integration
-Uses the provided API key: AIzaSyCp1PLO5Sowk0ladBV_BF8E8k2iwwU2_HY
+Test script for Gemini AI integration using environment API key.
 """
 
 import os
 import sys
 from pathlib import Path
+from dotenv import load_dotenv
+load_dotenv()
 
-# Add current directory to path for imports
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+def get_gemini_api_key():
+    return os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
 
 def test_gemini_basic():
     """Test basic Gemini AI connection and functionality"""
     print("🔍 Testing Basic Gemini AI Connection...")
-    
     try:
         import google.generativeai as genai
         from google.generativeai.generative_models import GenerativeModel
-        
-        # Set API key
-        api_key = "AIzaSyCp1PLO5Sowk0ladBV_BF8E8k2iwwU2_HY"
-        genai.configure(api_key=api_key)
-        
-        # Create model
+
+        api_key = get_gemini_api_key()
+        if not api_key:
+            print("❌ No Gemini API key found in environment!")
+            return False
+        print(f"[Gemini] API key loaded: {api_key[:6]}...{api_key[-2:]}")
+        # The latest SDK uses the environment variable, no need to set in code
+
         model = GenerativeModel('gemini-1.5-flash')
-        
-        # Test simple response
         response = model.generate_content("Hello! Please respond with 'Gemini is working correctly!'")
-        
         print("✅ Basic Gemini connection successful!")
         print(f"Response: {response.text}")
         return True
-        
     except Exception as e:
         print(f"❌ Basic Gemini test failed: {e}")
         return False
@@ -46,8 +44,11 @@ def test_gemini_medical_knowledge():
         from google.generativeai.generative_models import GenerativeModel
         
         # Set API key
-        api_key = "AIzaSyCp1PLO5Sowk0ladBV_BF8E8k2iwwU2_HY"
-        genai.configure(api_key=api_key)
+        api_key = get_gemini_api_key()
+        if not api_key:
+            print("❌ No Gemini API key found in environment!")
+            return False
+        print(f"[Gemini] API key loaded: {api_key[:6]}...{api_key[-2:]}")
         
         # Create model
         model = GenerativeModel('gemini-1.5-flash')
@@ -85,8 +86,11 @@ def test_gemini_pdf_analysis():
         import PyPDF2
         
         # Set API key
-        api_key = "AIzaSyCp1PLO5Sowk0ladBV_BF8E8k2iwwU2_HY"
-        genai.configure(api_key=api_key)
+        api_key = get_gemini_api_key()
+        if not api_key:
+            print("❌ No Gemini API key found in environment!")
+            return False
+        print(f"[Gemini] API key loaded: {api_key[:6]}...{api_key[-2:]}")
         
         # Create model
         model = GenerativeModel('gemini-1.5-flash')
@@ -183,8 +187,11 @@ def test_gemini_structured_analysis():
         from google.generativeai.generative_models import GenerativeModel
         
         # Set API key
-        api_key = "AIzaSyCp1PLO5Sowk0ladBV_BF8E8k2iwwU2_HY"
-        genai.configure(api_key=api_key)
+        api_key = get_gemini_api_key()
+        if not api_key:
+            print("❌ No Gemini API key found in environment!")
+            return False
+        print(f"[Gemini] API key loaded: {api_key[:6]}...{api_key[-2:]}")
         
         # Create model
         model = GenerativeModel('gemini-1.5-flash')
@@ -269,7 +276,7 @@ def main():
     print("=" * 60)
     print("🧪 COMPREHENSIVE GEMINI AI TEST SUITE")
     print("=" * 60)
-    print("API Key: AIzaSyCp1PLO5Sowk0ladBV_BF8E8k2iwwU2_HY")
+    print("API Key: GEMINI_API_KEY or GOOGLE_API_KEY")
     print("=" * 60)
     
     tests = [

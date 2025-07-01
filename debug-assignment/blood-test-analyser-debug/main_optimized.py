@@ -778,9 +778,12 @@ def simple_blood_analysis(file_path: str, query: str) -> dict:
         from google.generativeai.generative_models import GenerativeModel
         import PyPDF2
         
-        # Set API key
-        api_key = "AIzaSyCp1PLO5Sowk0ladBV_BF8E8k2iwwU2_HY"
-        genai.configure(api_key=api_key)
+        # The API key is set via the environment variable GEMINI_API_KEY or GOOGLE_API_KEY
+        api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+        if api_key:
+            print(f"[Gemini] API key loaded: {api_key[:6]}...{api_key[-2:]}")
+        else:
+            print("[Gemini] API key not found in environment!")
         
         # Create model
         model = GenerativeModel('gemini-1.5-flash')
@@ -852,12 +855,6 @@ def simple_blood_analysis(file_path: str, query: str) -> dict:
         return {
             "status": "processed",
             "result": result,
-            "fallback": True
-        }
-    except Exception as e:
-        return {
-            "status": "processed",
-            "result": f"Fallback analysis completed. Your report has been uploaded successfully. Please try the AI analysis again in a few minutes. Error: {str(e)}",
             "fallback": True
         }
 

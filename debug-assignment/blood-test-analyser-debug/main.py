@@ -13,6 +13,8 @@ import uuid
 import asyncio
 from typing import Optional, Any, Generator
 from dotenv import load_dotenv
+import io
+import PyPDF2
 
 # Try to import database components, but handle gracefully if they fail
 try:
@@ -175,17 +177,24 @@ async def analyze_blood_report(
     file: UploadFile = File(...),
     query: str = Form(default="Summarise my Blood Test Report")
 ):
-    """Endpoint to analyze uploaded blood test PDF report"""
-    file_id = str(uuid.uuid4())
-    file_path = f"data/blood_test_report_{file_id}.pdf"
+    """Endpoint to analyze uploaded blood test PDF report (in-memory, fast)"""
     try:
-        with open(file_path, "wb") as f:
-            content = await file.read()
-            f.write(content)
-        if not query.strip():
-            query = "Summarise my Blood Test Report"
-        # Run crew in a separate thread to avoid blocking FastAPI event loop
-        result = await asyncio.to_thread(run_crew, query.strip(), file_path)
+        content = await file.read()
+        # Save content to temporary file
+        temp_file_path = f"data/temp_{uuid.uuid4()}.pdf"
+        with open(temp_file_path, "wb") as temp_file:
+            temp_file.write(content)
+        
+        # Run analysis in a thread to avoid blocking
+        from enhanced_analysis import enhanced_simple_blood_analysis
+        result = await asyncio.to_thread(enhanced_simple_blood_analysis, temp_file_path, query.strip())
+        
+        # Clean up temporary file
+        try:
+            os.remove(temp_file_path)
+        except:
+            pass
+        
         # Always return a structured analysis result
         if isinstance(result, dict):
             analysis_result = result.get("result", "No analysis result was generated.")
@@ -198,18 +207,12 @@ async def analyze_blood_report(
         return {
             "status": status,
             "query": query.strip(),
-            "analysis": analysis_result,
+            "result": analysis_result,
             "fallback": fallback,
             "file_processed": file.filename
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error processing blood report: {str(e)}")
-    finally:
-        if os.path.exists(file_path):
-            try:
-                os.remove(file_path)
-            except:
-                pass
 
 @app.get("/api/user-reports")
 async def get_user_reports(

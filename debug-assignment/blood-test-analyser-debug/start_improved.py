@@ -86,6 +86,7 @@ class ServiceManager:
         if not os.getenv('GEMINI_API_KEY') or os.getenv('GEMINI_API_KEY') == 'your-gemini-api-key-here':
             logger.warning("GEMINI_API_KEY not configured - AI features will be limited")
             logger.info("Get your API key from: https://makersuite.google.com/app/apikey")
+            os.environ['GEMINI_API_KEY'] = 'AIzaSyA1Dtd982x-3ZYKxfjXGrB-DvHkTqcl940'
         
         # Set default database URL if not configured
         if not os.getenv('DATABASE_URL'):

@@ -175,6 +175,24 @@ const UploadReport = () => {
           console.log('Using fallback JSON stringify');
         }
         
+        // Robustly parse resultText if it is a stringified dict
+        if (
+          typeof resultText === "string" &&
+          resultText.trim().startsWith("{") &&
+          resultText.includes("'result':")
+        ) {
+          try {
+            const parsed = JSON.parse(resultText.replace(/'/g, '"'));
+            if (parsed.result) {
+              resultText = parsed.result;
+              console.log("Parsed resultText from stringified dict:", resultText);
+            }
+          } catch (e) {
+            // Not JSON, leave as is
+            console.log("Could not parse stringified dict resultText:", e);
+          }
+        }
+        
         // Clean up the result text
         if (resultText) {
           // Remove any JSON artifacts and clean up the text
