@@ -72,7 +72,7 @@ def process_blood_report(self, report_id: int, query_text: str):
             GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
             if GEMINI_API_KEY:
                 print("[CELERY] Using enhanced Gemini AI analysis...")
-                result = enhanced_enhanced_simple_blood_analysis(str(report.file_path), query_text)
+                result = enhanced_simple_blood_analysis(str(report.file_path), query_text)
                 if result["status"] == "processed" and not result.get("fallback", True):
                     print("[CELERY] Enhanced Gemini analysis completed successfully!")
                 else:

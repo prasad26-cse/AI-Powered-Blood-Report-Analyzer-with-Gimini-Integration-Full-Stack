@@ -46,6 +46,17 @@ const Dashboard = () => {
     clinical: true
   });
 
+  // Function to reset expanded sections when modal opens
+  const resetExpandedSections = () => {
+    setExpandedSections({
+      summary: true,
+      interpretation: true,
+      recommendations: true,
+      insights: true,
+      clinical: true
+    });
+  };
+
   const formatContent = (text, sectionKey = '') => {
     if (!text) return '';
     let formatted = text
@@ -54,12 +65,28 @@ const Dashboard = () => {
       .replace(/(normal|good|excellent|healthy)/gi, '<span class="text-green-600 font-medium">$1</span>')
       .replace(/(elevated|high|concerning|abnormal)/gi, '<span class="text-orange-600 font-medium">$1</span>')
       .replace(/(critical|dangerous|severe)/gi, '<span class="text-red-600 font-medium">$1</span>');
-    // For recommendations section, add line breaks after each period or comma followed by a capital letter
-    if (sectionKey === 'recommendations') {
-      formatted = formatted
-        .replace(/([a-zA-Z0-9)".] )(?=[A-Z])/g, '$1<br>')
-        .replace(/, ?(?=[A-Z])/g, ',<br>');
+    
+    // Enhanced formatting for recommendations and insights
+    if (sectionKey === 'recommendations' || sectionKey === 'insights') {
+      let blocks = formatted.split(/\n\n|(?=\d+\. )|(?=• )|(?=- )/g).filter(Boolean);
+      formatted = blocks.map(block => `<div class="mb-3">${block.trim()}</div>`).join('');
+      formatted = formatted.replace(/(Vitamin D|HbA1c|HDL|LDL|BMI|CBC|CMP)/gi, '<span style="white-space: nowrap;">$1</span>');
     }
+    
+    // Enhanced formatting for interpretation section: pointwise, spaced, bullet style
+    if (sectionKey === 'interpretation') {
+      // Remove stray bullets, single letters, and empty lines
+      let cleaned = formatted.replace(/^[•\-*]\s*$/gm, '').replace(/^([A-Z])$/gm, '').replace(/\n{2,}/g, '\n');
+      // Split on patterns like 'Analyte (value):', '*', or double newlines
+      let points = cleaned.split(/(?=[A-Z][a-zA-Z ]+\([^)]+\):)|\*|\n\n|\n|•/).map(p => p.trim()).filter(p => p && p.length > 2);
+      formatted = points.map(point => `<div class="mb-2 flex items-start"><span class="mr-2 text-medical-600">•</span><span>${point}</span></div>`).join('');
+      formatted = formatted.replace(/(Vitamin D|HbA1c|HDL|LDL|BMI|CBC|CMP)/gi, '<span style="white-space: nowrap;">$1</span>');
+    }
+    
+    if (!formatted.includes('<p>') && !formatted.includes('<div')) {
+      formatted = `<p class="mb-3">${formatted}</p>`;
+    }
+    
     return formatted;
   };
 
@@ -233,6 +260,7 @@ const Dashboard = () => {
       const response = await axios.get(`/api/report/${report.id}`);
       setSelectedReportAnalysis(response.data.analysis_result || '');
       setSelectedReport(report);
+      resetExpandedSections(); // Reset sections to expanded state
       setShowAnalysisModal(true);
     } catch (error) {
       toast.error('Failed to fetch full analysis');
@@ -273,43 +301,33 @@ const Dashboard = () => {
       .replace(/\n\s*\n\s*\n/g, '\n\n')
       .replace(/^\s+|\s+$/g, '')
       .trim();
+    // Remove stray bullet points and empty lines
+    cleanResult = cleanResult.replace(/^[•\-*]\s*$/gm, '').replace(/\n{2,}/g, '\n');
     const lines = cleanResult.split('\n');
     let currentSection = '';
     let sectionContent = [];
     lines.forEach(line => {
       const trimmedLine = line.trim();
-      if (trimmedLine.includes('**1. Summary') || trimmedLine.includes('**Summary') || trimmedLine.includes('Summary of Key Findings')) {
-        if (currentSection && sectionContent.length > 0) {
-          sections[currentSection] = sectionContent.join('\n');
-        }
-        currentSection = 'summary';
-        sectionContent = [];
-      } else if (trimmedLine.includes('**2. Interpretation') || trimmedLine.includes('**Interpretation') || trimmedLine.includes('Interpretation of Any abnormal Values')) {
-        if (currentSection && sectionContent.length > 0) {
-          sections[currentSection] = sectionContent.join('\n');
-        }
-        currentSection = 'interpretation';
-        sectionContent = [];
-      } else if (trimmedLine.includes('**3. Clinical') || trimmedLine.includes('**Clinical') || trimmedLine.includes('Clinical Significance of Results')) {
-        if (currentSection && sectionContent.length > 0) {
-          sections[currentSection] = sectionContent.join('\n');
-        }
-        currentSection = 'clinical';
-        sectionContent = [];
-      } else if (trimmedLine.includes('**4. Recommendations') || trimmedLine.includes('**Recommendations') || trimmedLine.includes('Recommendations & Follow-up')) {
-        if (currentSection && sectionContent.length > 0) {
-          sections[currentSection] = sectionContent.join('\n');
-        }
-        currentSection = 'recommendations';
-        sectionContent = [];
-      } else if (trimmedLine.includes('**5. General Health') || trimmedLine.includes('**General Health') || trimmedLine.includes('General Health Insights')) {
-        if (currentSection && sectionContent.length > 0) {
-          sections[currentSection] = sectionContent.join('\n');
-        }
-        currentSection = 'insights';
-        sectionContent = [];
+      if (trimmedLine.match(/\*\*1\.?\s*Summary|\*\*Summary|Summary of Key Findings/i)) {
+        if (currentSection && sectionContent.length > 0) sections[currentSection] = sectionContent.join('\n');
+        currentSection = 'summary'; sectionContent = [];
+      } else if (trimmedLine.match(/\*\*2\.?\s*Interpretation|\*\*Interpretation|Interpretation of Any abnormal Values|Interpretation of Abnormal Values/i)) {
+        if (currentSection && sectionContent.length > 0) sections[currentSection] = sectionContent.join('\n');
+        currentSection = 'interpretation'; sectionContent = [];
+      } else if (trimmedLine.match(/\*\*3\.?\s*Clinical|\*\*Clinical|Clinical Significance of Results/i)) {
+        if (currentSection && sectionContent.length > 0) sections[currentSection] = sectionContent.join('\n');
+        currentSection = 'clinical'; sectionContent = [];
+      } else if (trimmedLine.match(/\*\*4\.?\s*Recommendations|\*\*Recommendations|Recommendations & Follow-up/i)) {
+        if (currentSection && sectionContent.length > 0) sections[currentSection] = sectionContent.join('\n');
+        currentSection = 'recommendations'; sectionContent = [];
+      } else if (trimmedLine.match(/\*\*5\.?\s*General Health|\*\*General Health|General Health Insights/i)) {
+        if (currentSection && sectionContent.length > 0) sections[currentSection] = sectionContent.join('\n');
+        currentSection = 'insights'; sectionContent = [];
       } else if (currentSection && trimmedLine) {
-        sectionContent.push(line);
+        // Remove lines that are just single letters or stray bullets
+        if (!/^([A-Z]|[•\-*])$/.test(trimmedLine)) {
+          sectionContent.push(line);
+        }
       }
     });
     if (currentSection && sectionContent.length > 0) {
@@ -338,7 +356,19 @@ const Dashboard = () => {
         </button>
         {isExpanded && (
           <div className="px-6 pb-6">
-            <div className="prose prose-medical max-w-none" dangerouslySetInnerHTML={{ __html: formatContent(content, sectionKey) }} />
+            <div 
+              className={`prose prose-medical max-w-none ${
+                sectionKey === 'insights' 
+                  ? 'space-y-4 leading-relaxed' 
+                  : ''
+              }`}
+              style={sectionKey === 'insights' ? {
+                wordWrap: 'break-word',
+                hyphens: 'auto',
+                lineHeight: '1.8'
+              } : {}}
+              dangerouslySetInnerHTML={{ __html: formatContent(content, sectionKey) }} 
+            />
           </div>
         )}
       </div>
@@ -347,26 +377,183 @@ const Dashboard = () => {
 
   // Add this function to handle PDF export for a report
   const exportReportSummaryToPDF = (report) => {
-    const summary = parseAnalysisResult(report.analysis_result).summary || 'No summary available.';
+    const analysis = parseAnalysisResult(report.analysis_result);
     const tempDiv = document.createElement('div');
     tempDiv.style.background = '#fff';
-    tempDiv.style.fontFamily = 'inherit';
-    tempDiv.style.padding = '32px';
-    tempDiv.style.width = '800px';
+    tempDiv.style.fontFamily = 'Arial, sans-serif';
+    tempDiv.style.padding = '20px';
+    tempDiv.style.width = '100%';
+    tempDiv.style.maxWidth = '800px';
     tempDiv.style.boxSizing = 'border-box';
-    tempDiv.innerHTML = `
-      <div style="margin-bottom: 24px; padding: 16px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 12px;">
-        <div style="font-size: 1.25rem; font-weight: 600; color: #374151; margin-bottom: 8px;">${report.filename}</div>
-        <div style="font-size: 1rem; color: #6b7280;">Uploaded: ${new Date(report.upload_date).toLocaleDateString()}</div>
+    tempDiv.style.lineHeight = '1.6';
+
+    // Get user details from localStorage
+    let userDetailsHTML = '';
+    try {
+      const storedUser = localStorage.getItem('user');
+      if (storedUser) {
+        const userData = JSON.parse(storedUser);
+        userDetailsHTML = `<div style="font-size:16px;font-weight:600;color:#1e293b;text-align:center;margin-bottom:6px;">${userData.full_name || ''}</div>`;
+        if (userData.email) {
+          userDetailsHTML += `<div style="font-size:13px;color:#64748b;text-align:center;margin-bottom:10px;">${userData.email}</div>`;
+        }
+      }
+    } catch {}
+
+    // Function to format content specifically for PDF
+    const formatContentForPDF = (text, sectionKey = '') => {
+      if (!text) return '';
+      let formatted = text
+        .replace(/\*\*([^*]+)\*\*/g, '<strong style="font-weight: bold; color: #1e293b;">$1</strong>')
+        .replace(/\*([^*]+)\*/g, '<em style="font-style: italic; color: #475569;">$1</em>')
+        .replace(/(normal|good|excellent|healthy)/gi, '<span style="color: #059669; font-weight: 600;">$1</span>')
+        .replace(/(elevated|high|concerning|abnormal)/gi, '<span style="color: #d97706; font-weight: 600;">$1</span>')
+        .replace(/(critical|dangerous|severe)/gi, '<span style="color: #dc2626; font-weight: 600;">$1</span>');
+      
+      // Enhanced formatting for insights section in PDF
+      if (sectionKey === 'insights') {
+        // Highlight section titles with better styling and prevent page breaks
+        formatted = formatted
+          .replace(/(Dietary and Lifestyle Modifications|Repeat Blood Tests|Vitamin D Supplementation|Comprehensive Cardiovascular Risk Assessment|HbA1c test)/gi, 
+            '<div style="page-break-inside: avoid; break-inside: avoid; font-size: 16px; font-weight: bold; color: #7c3aed; margin: 15px 0 8px 0; border-bottom: 2px solid #7c3aed; padding-bottom: 4px;">$1</div>')
+          // Prevent breaking of key medical terms
+          .replace(/(Vitamin D|HbA1c|HDL|LDL|BMI|CBC|CMP)/gi, '<span style="white-space: nowrap; font-weight: 600;">$1</span>')
+          // Convert numbered lists with proper formatting and page break prevention
+          .replace(/(\d+\.\s+)/g, '<div style="page-break-inside: avoid; break-inside: avoid; margin: 12px 0 8px 0; padding: 10px; background: #f8f7ff; border-left: 3px solid #7c3aed; border-radius: 6px;"><strong style="color: #7c3aed;">$1</strong>')
+          // Convert bullet points with page break prevention
+          .replace(/(•\s+|- \s+)/g, '<div style="page-break-inside: avoid; break-inside: avoid; margin: 8px 0 6px 20px; padding: 8px; background: #f8f7ff; border-left: 2px solid #7c3aed; border-radius: 4px;">• ')
+          // Add proper paragraph breaks with page break prevention
+          .replace(/([.!?])\s+(?=[A-Z][a-z])/g, '$1</div><div style="page-break-inside: avoid; break-inside: avoid; margin: 10px 0; padding: 8px; background: #f8f7ff; border-left: 2px solid #7c3aed; border-radius: 4px;">')
+          // Close divs properly
+          .replace(/(<div[^>]*>.*?)(?=<div|$)/g, '$1</div>');
+      }
+      
+      // Enhanced formatting for recommendations section in PDF
+      if (sectionKey === 'recommendations') {
+        formatted = formatted
+          // Wrap each recommendation in a container that won't break
+          .replace(/(Dietary Review|Exercise Plan|Medication Review|Follow-up Testing|Lifestyle Modifications|Nutrition Consultation|Physical Activity|Stress Management|Sleep Hygiene|Weight Management|Smoking Cessation|Alcohol Moderation|Blood Pressure Monitoring|Blood Sugar Monitoring|Cholesterol Management|Vitamin Supplementation|Mental Health Support|Cardiovascular Health|Diabetes Management|Hypertension Control)/gi, 
+            '<div style="page-break-inside: avoid; break-inside: avoid; margin: 15px 0; padding: 12px; background: #fef7f7; border-left: 3px solid #dc2626; border-radius: 6px;"><strong style="color: #991b1b; font-size: 15px;">$1:</strong>')
+          // Close recommendation containers
+          .replace(/([.!?])\s+(?=[A-Z][a-z][^:]*:)/g, '$1</div><div style="page-break-inside: avoid; break-inside: avoid; margin: 15px 0; padding: 12px; background: #fef7f7; border-left: 3px solid #dc2626; border-radius: 6px;"><strong style="color: #991b1b; font-size: 15px;">')
+          // Handle numbered recommendations
+          .replace(/(\d+\.\s+)/g, '<div style="page-break-inside: avoid; break-inside: avoid; margin: 12px 0; padding: 10px; background: #fef7f7; border-left: 3px solid #dc2626; border-radius: 6px;"><strong style="color: #991b1b;">$1</strong>')
+          // Add proper paragraph breaks
+          .replace(/([.!?])\s+(?=[A-Z][a-z])/g, '$1</div><div style="page-break-inside: avoid; break-inside: avoid; margin: 8px 0;">')
+          // Close any remaining open divs
+          .replace(/(<div[^>]*>.*?)(?=<div|$)/g, '$1</div>');
+      }
+      
+      return formatted;
+    };
+    
+    // Create comprehensive PDF content with improved layout and pagination
+    const pdfContent = `
+      <div style="page-break-inside: avoid; break-inside: avoid; margin-bottom: 30px; padding: 20px; background: #f8fafc; border: 2px solid #e2e8f0; border-radius: 8px;">
+        <div style="font-size: 24px; font-weight: 700; color: #1e293b; margin-bottom: 10px; text-align: center;">Blood Test Analysis Report</div>
+        ${userDetailsHTML}
+        <div style="font-size: 18px; font-weight: 600; color: #475569; margin-bottom: 8px; text-align: center;">${report.filename}</div>
+        <div style="font-size: 14px; color: #64748b; text-align: center;">
+          Uploaded: ${new Date(report.upload_date).toLocaleDateString()} | Generated: ${new Date().toLocaleDateString()}
+        </div>
       </div>
-      <div style="margin-bottom: 16px;">
-        <h2 style="font-size: 1.1rem; font-weight: bold; color: #2563eb; margin-bottom: 8px; display: flex; align-items: center;">
-          <svg style="width: 20px; height: 20px; margin-right: 6px; color: #2563eb;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path d="M12 8v4l3 3" /></svg>
-          Summary of Key Findings
-        </h2>
-        <div style="font-size: 1rem; color: #374151;">${formatContent(summary)}</div>
+      
+      ${analysis.summary ? `
+      <div class="summary-section" style="page-break-inside: avoid; break-inside: avoid; margin-bottom: 25px; padding: 20px; background: #eff6ff; border-left: 5px solid #2563eb; border-radius: 8px;">
+        <h2 style="font-size: 18px; font-weight: bold; color: #1e40af; margin-bottom: 15px; margin-top: 0;">📋 Summary of Key Findings</h2>
+        <div style="font-size: 14px; color: #1e293b; line-height: 1.8; text-align: justify; page-break-inside: avoid; break-inside: avoid;">
+          ${formatContentForPDF(analysis.summary)}
+        </div>
+      </div>
+      ` : ''}
+      
+      ${analysis.interpretation ? `
+      <div class="interpretation-section" style="page-break-inside: avoid; break-inside: avoid; margin-bottom: 25px; padding: 20px; background: #fef3c7; border-left: 5px solid #d97706; border-radius: 8px;">
+        <h2 style="font-size: 18px; font-weight: bold; color: #92400e; margin-bottom: 15px; margin-top: 0;">🔍 Interpretation of Abnormal Values</h2>
+        <div style="font-size: 14px; color: #1e293b; line-height: 1.8; text-align: justify; page-break-inside: avoid; break-inside: avoid;">
+          ${formatContentForPDF(analysis.interpretation)}
+        </div>
+      </div>
+      ` : ''}
+      
+      ${analysis.clinical ? `
+      <div class="clinical-section" style="page-break-inside: avoid; break-inside: avoid; margin-bottom: 25px; padding: 20px; background: #f0fdf4; border-left: 5px solid #059669; border-radius: 8px;">
+        <h2 style="font-size: 18px; font-weight: bold; color: #047857; margin-bottom: 15px; margin-top: 0;">🏥 Clinical Significance of Results</h2>
+        <div style="font-size: 14px; color: #1e293b; line-height: 1.8; text-align: justify; page-break-inside: avoid; break-inside: avoid;">
+          ${formatContentForPDF(analysis.clinical)}
+        </div>
+      </div>
+      ` : ''}
+      
+      ${analysis.recommendations ? `
+      <div class="recommendation-block" style="page-break-inside: avoid; break-inside: avoid; margin-bottom: 25px; padding: 20px; background: #fef2f2; border-left: 5px solid #dc2626; border-radius: 8px;">
+        <h2 style="font-size: 18px; font-weight: bold; color: #991b1b; margin-bottom: 15px; margin-top: 0;">💡 Recommendations for Follow-up</h2>
+        <div style="font-size: 14px; color: #1e293b; line-height: 1.8; text-align: justify; page-break-inside: avoid; break-inside: avoid;">
+          ${formatContentForPDF(analysis.recommendations, 'recommendations')}
+        </div>
+      </div>
+      ` : ''}
+      
+      ${analysis.insights ? `
+      <div class="insight-block" style="page-break-inside: avoid; break-inside: avoid; margin-bottom: 25px; padding: 20px; background: #f3e8ff; border-left: 5px solid #7c3aed; border-radius: 8px;">
+        <h2 style="font-size: 18px; font-weight: bold; color: #5b21b6; margin-bottom: 15px; margin-top: 0;">💊 General Health Insights</h2>
+        <div style="font-size: 14px; color: #1e293b; line-height: 1.8; text-align: justify; word-wrap: break-word; hyphens: auto; page-break-inside: avoid; break-inside: avoid;">
+          ${formatContentForPDF(analysis.insights, 'insights')}
+        </div>
+      </div>
+      ` : ''}
+      
+      <div style="page-break-inside: avoid; break-inside: avoid; margin-top: 40px; padding: 25px; background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); border: 2px solid #cbd5e1; border-radius: 12px; text-align: center; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+        <div style="margin-bottom: 15px;">
+          <div style="display: inline-block; padding: 8px 16px; background: #1e293b; color: white; border-radius: 20px; font-size: 14px; font-weight: 600; margin-bottom: 10px;">
+            🤖 AI-Generated Analysis Report
+          </div>
+        </div>
+        
+        <div style="margin-bottom: 15px;">
+          <p style="font-size: 16px; font-weight: 600; color: #1e293b; margin: 0 0 8px 0; line-height: 1.4;">
+            Generated by Google Gemini AI Technology
+          </p>
+          <p style="font-size: 14px; color: #475569; margin: 0; line-height: 1.5;">
+            This comprehensive blood test analysis was powered by advanced artificial intelligence
+          </p>
+        </div>
+        
+        <div style="display: flex; justify-content: center; align-items: center; gap: 20px; margin-bottom: 15px; flex-wrap: wrap;">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span style="color: #059669; font-size: 16px;">✓</span>
+            <span style="font-size: 12px; color: #64748b;">AI-Powered Analysis</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span style="color: #059669; font-size: 16px;">✓</span>
+            <span style="font-size: 12px; color: #64748b;">Medical Knowledge Base</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span style="color: #059669; font-size: 16px;">✓</span>
+            <span style="font-size: 12px; color: #64748b;">Comprehensive Review</span>
+          </div>
+        </div>
+        
+        <div style="border-top: 1px solid #cbd5e1; padding-top: 15px;">
+          <p style="font-size: 13px; color: #64748b; margin: 0 0 8px 0; line-height: 1.4;">
+            <strong>Important Notice:</strong> This analysis is generated by artificial intelligence and should be used as a reference only.
+          </p>
+          <p style="font-size: 12px; color: #94a3b8; margin: 0; line-height: 1.4;">
+            For medical decisions, diagnosis, and treatment plans, please consult with a qualified healthcare professional.
+          </p>
+        </div>
+        
+        <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #cbd5e1;">
+          <p style="font-size: 11px; color: #94a3b8; margin: 0; line-height: 1.3;">
+            Report generated on ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()} | 
+            AI-Based Blood Test Analysis System v1.0
+          </p>
+        </div>
       </div>
     `;
+    
+    tempDiv.innerHTML = pdfContent;
+    
     // Get full_name from localStorage
     let fullName = 'report';
     try {
@@ -376,12 +563,29 @@ const Dashboard = () => {
         if (userData.full_name) fullName = userData.full_name.replace(/\s+/g, '_');
       }
     } catch {}
+    
     html2pdf().set({
-      margin: 0.5,
-      filename: `${fullName}_blood_analysis.pdf`,
+      margin: [0.75, 0.5, 0.75, 0.5], // [top, right, bottom, left] margins
+      filename: `${fullName}_complete_blood_analysis.pdf`,
       image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2 },
-      jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+      html2canvas: { 
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        letterRendering: true
+      },
+      jsPDF: { 
+        unit: 'in', 
+        format: 'a4', 
+        orientation: 'portrait',
+        compress: true
+      },
+      pagebreak: { 
+        mode: ['avoid-all', 'css', 'legacy'],
+        before: '.page-break-before',
+        after: '.page-break-after',
+        avoid: '.recommendation-block, .insight-block, .summary-section, .interpretation-section, .clinical-section'
+      }
     }).from(tempDiv).save();
   };
 
@@ -844,31 +1048,42 @@ const Dashboard = () => {
 
       {/* Analysis Result Modal */}
       <Dialog open={showAnalysisModal} onClose={() => setShowAnalysisModal(false)} className="fixed z-50 inset-0 overflow-y-auto">
-        <div className="flex items-center justify-center min-h-screen px-4">
+        <div className="flex items-center justify-center min-h-screen px-4 py-8">
           <Dialog.Overlay className="fixed inset-0 bg-black opacity-30" />
-          <div className="relative bg-white rounded-xl shadow-xl max-w-2xl w-full mx-auto p-6 z-10">
-            <button onClick={() => setShowAnalysisModal(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-700">
+          <div className="relative bg-white rounded-xl shadow-xl max-w-4xl w-full mx-auto p-6 z-10 max-h-[90vh] overflow-y-auto">
+            <button onClick={() => setShowAnalysisModal(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 z-20">
               <XMarkIcon className="h-6 w-6" />
             </button>
-            <h2 className="text-2xl font-bold text-medical-900 mb-4 flex items-center space-x-2">
+            <h2 className="text-2xl font-bold text-medical-900 mb-4 flex items-center space-x-2 pr-8">
               <ChartBarIcon className="h-7 w-7 text-primary-600" />
-              <span>Full Analysis Result</span>
+              <span>Complete Blood Test Analysis</span>
             </h2>
             {selectedReport && (
-              <div className="mb-4">
-                <p className="text-sm text-medical-700">{selectedReport.filename}</p>
+              <div className="mb-6 p-4 bg-medical-50 rounded-lg border border-medical-200">
+                <p className="text-sm font-medium text-medical-900">File: {selectedReport.filename}</p>
+                <p className="text-xs text-medical-600">Uploaded: {new Date(selectedReport.upload_date).toLocaleDateString()}</p>
               </div>
             )}
             {selectedReportAnalysis ? (
-              <div className="space-y-4">
-                {renderSection('Summary of Key Findings', parseAnalysisResult(selectedReportAnalysis).summary, 'summary', <InformationCircleIcon className="h-6 w-6 text-blue-600" />)}
-                {renderSection('Interpretation of Values', parseAnalysisResult(selectedReportAnalysis).interpretation, 'interpretation', <ExclamationCircleIcon className="h-6 w-6 text-orange-600" />)}
-                {renderSection('Clinical Significance', parseAnalysisResult(selectedReportAnalysis).clinical, 'clinical', <CheckIcon className="h-6 w-6 text-green-600" />)}
-                {renderSection('Recommendations & Follow-up', parseAnalysisResult(selectedReportAnalysis).recommendations, 'recommendations', <StarIcon className="h-6 w-6 text-purple-600" />)}
-                {renderSection('General Health Insights', parseAnalysisResult(selectedReportAnalysis).insights, 'insights', <ChartBarIcon className="h-6 w-6 text-indigo-600" />)}
+              <div className="space-y-6">
+                {renderSection('📋 Summary of Key Findings', parseAnalysisResult(selectedReportAnalysis).summary, 'summary', <InformationCircleIcon className="h-6 w-6 text-blue-600" />)}
+                {renderSection('🔍 Interpretation of Abnormal Values', parseAnalysisResult(selectedReportAnalysis).interpretation, 'interpretation', <ExclamationCircleIcon className="h-6 w-6 text-orange-600" />)}
+                {renderSection('🏥 Clinical Significance of Results', parseAnalysisResult(selectedReportAnalysis).clinical, 'clinical', <CheckIcon className="h-6 w-6 text-green-600" />)}
+                {renderSection('💡 Recommendations for Follow-up', parseAnalysisResult(selectedReportAnalysis).recommendations, 'recommendations', <StarIcon className="h-6 w-6 text-purple-600" />)}
+                {renderSection('💊 General Health Insights', parseAnalysisResult(selectedReportAnalysis).insights, 'insights', <ChartBarIcon className="h-6 w-6 text-indigo-600" />)}
+                
+                <div className="mt-8 pt-6 border-t border-medical-200">
+                  <button
+                    onClick={() => exportReportSummaryToPDF(selectedReport)}
+                    className="inline-flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+                  >
+                    <DocumentTextIcon className="w-5 h-5 mr-2" />
+                    Download Complete PDF Report
+                  </button>
+                </div>
               </div>
             ) : (
-              <div className="text-center text-medical-600">No analysis result available.</div>
+              <div className="text-center text-medical-600 py-8">No analysis result available.</div>
             )}
           </div>
         </div>

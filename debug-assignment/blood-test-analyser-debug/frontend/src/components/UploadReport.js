@@ -749,62 +749,199 @@ const UploadReport = () => {
     document.body.removeChild(element);
   };
 
-  // PDF export function
+  // Enhanced PDF export function with Gemini AI footer
   const exportToPDF = () => {
+    const analysis = parseAnalysisResult(analysisResult);
     const tempDiv = document.createElement('div');
     tempDiv.style.background = '#fff';
-    tempDiv.style.fontFamily = 'inherit';
-    tempDiv.style.padding = '32px';
+    tempDiv.style.fontFamily = 'Arial, sans-serif';
+    tempDiv.style.padding = '20px';
     tempDiv.style.width = '100%';
     tempDiv.style.maxWidth = '800px';
     tempDiv.style.boxSizing = 'border-box';
-    tempDiv.style.wordBreak = 'break-word';
-    tempDiv.style.overflowWrap = 'break-word';
-
-    // Add user info from context
-    tempDiv.innerHTML = `
-      <div style="margin-bottom: 24px; padding: 16px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 12px;">
-        <div style="display: flex; flex-wrap: wrap; gap: 32px;">
-          <div><span style="font-weight: 600; color: #374151;">Patient Name:</span> ${user?.full_name || ''}</div>
-          <div><span style="font-weight: 600; color: #374151;">Email:</span> ${user?.email || ''}</div>
-          <div><span style="font-weight: 600; color: #374151;">Mobile Number:</span> ${user?.mobile_number || ''}</div>
+    tempDiv.style.lineHeight = '1.6';
+    
+    // Function to format content specifically for PDF
+    const formatContentForPDF = (text, sectionKey = '') => {
+      if (!text) return '';
+      let formatted = text
+        .replace(/\*\*([^*]+)\*\*/g, '<strong style="font-weight: bold; color: #1e293b;">$1</strong>')
+        .replace(/\*([^*]+)\*/g, '<em style="font-style: italic; color: #475569;">$1</em>')
+        .replace(/(normal|good|excellent|healthy)/gi, '<span style="color: #059669; font-weight: 600;">$1</span>')
+        .replace(/(elevated|high|concerning|abnormal)/gi, '<span style="color: #d97706; font-weight: 600;">$1</span>')
+        .replace(/(critical|dangerous|severe)/gi, '<span style="color: #dc2626; font-weight: 600;">$1</span>');
+      
+      // Enhanced formatting for insights section in PDF
+      if (sectionKey === 'insights') {
+        // Highlight section titles with better styling and prevent page breaks
+        formatted = formatted
+          .replace(/(Dietary and Lifestyle Modifications|Repeat Blood Tests|Vitamin D Supplementation|Comprehensive Cardiovascular Risk Assessment|HbA1c test)/gi, 
+            '<div style="page-break-inside: avoid; break-inside: avoid; font-size: 16px; font-weight: bold; color: #7c3aed; margin: 15px 0 8px 0; border-bottom: 2px solid #7c3aed; padding-bottom: 4px;">$1</div>')
+          // Prevent breaking of key medical terms
+          .replace(/(Vitamin D|HbA1c|HDL|LDL|BMI|CBC|CMP)/gi, '<span style="white-space: nowrap; font-weight: 600;">$1</span>')
+          // Convert numbered lists with proper formatting and page break prevention
+          .replace(/(\d+\.\s+)/g, '<div style="page-break-inside: avoid; break-inside: avoid; margin: 12px 0 8px 0; padding: 10px; background: #f8f7ff; border-left: 3px solid #7c3aed; border-radius: 6px;"><strong style="color: #7c3aed;">$1</strong>')
+          // Convert bullet points with page break prevention
+          .replace(/(•\s+|- \s+)/g, '<div style="page-break-inside: avoid; break-inside: avoid; margin: 8px 0 6px 20px; padding: 8px; background: #f8f7ff; border-left: 2px solid #7c3aed; border-radius: 4px;">• ')
+          // Add proper paragraph breaks with page break prevention
+          .replace(/([.!?])\s+(?=[A-Z][a-z])/g, '$1</div><div style="page-break-inside: avoid; break-inside: avoid; margin: 10px 0; padding: 8px; background: #f8f7ff; border-left: 2px solid #7c3aed; border-radius: 4px;">')
+          // Close divs properly
+          .replace(/(<div[^>]*>.*?)(?=<div|$)/g, '$1</div>');
+      }
+      
+      // Enhanced formatting for recommendations section in PDF
+      if (sectionKey === 'recommendations') {
+        formatted = formatted
+          // Wrap each recommendation in a container that won't break
+          .replace(/(Dietary Review|Exercise Plan|Medication Review|Follow-up Testing|Lifestyle Modifications|Nutrition Consultation|Physical Activity|Stress Management|Sleep Hygiene|Weight Management|Smoking Cessation|Alcohol Moderation|Blood Pressure Monitoring|Blood Sugar Monitoring|Cholesterol Management|Vitamin Supplementation|Mental Health Support|Cardiovascular Health|Diabetes Management|Hypertension Control)/gi, 
+            '<div style="page-break-inside: avoid; break-inside: avoid; margin: 15px 0; padding: 12px; background: #fef7f7; border-left: 3px solid #dc2626; border-radius: 6px;"><strong style="color: #991b1b; font-size: 15px;">$1:</strong>')
+          // Close recommendation containers
+          .replace(/([.!?])\s+(?=[A-Z][a-z][^:]*:)/g, '$1</div><div style="page-break-inside: avoid; break-inside: avoid; margin: 15px 0; padding: 12px; background: #fef7f7; border-left: 3px solid #dc2626; border-radius: 6px;"><strong style="color: #991b1b; font-size: 15px;">')
+          // Handle numbered recommendations
+          .replace(/(\d+\.\s+)/g, '<div style="page-break-inside: avoid; break-inside: avoid; margin: 12px 0; padding: 10px; background: #fef7f7; border-left: 3px solid #dc2626; border-radius: 6px;"><strong style="color: #991b1b;">$1</strong>')
+          // Add proper paragraph breaks
+          .replace(/([.!?])\s+(?=[A-Z][a-z])/g, '$1</div><div style="page-break-inside: avoid; break-inside: avoid; margin: 8px 0;">')
+          // Close any remaining open divs
+          .replace(/(<div[^>]*>.*?)(?=<div|$)/g, '$1</div>');
+      }
+      
+      return formatted;
+    };
+    
+    // Create comprehensive PDF content with improved layout and pagination
+    const pdfContent = `
+      <div style="page-break-inside: avoid; break-inside: avoid; margin-bottom: 30px; padding: 20px; background: #f8fafc; border: 2px solid #e2e8f0; border-radius: 8px;">
+        <div style="font-size: 24px; font-weight: 700; color: #1e293b; margin-bottom: 10px; text-align: center;">Blood Test Analysis Report</div>
+        <div style="font-size: 18px; font-weight: 600; color: #475569; margin-bottom: 8px; text-align: center;">${file?.name || 'Blood Test Report'}</div>
+        <div style="font-size: 14px; color: #64748b; text-align: center;">
+          Patient: ${user?.full_name || 'N/A'} | Email: ${user?.email || 'N/A'} | Generated: ${new Date().toLocaleDateString()}
+        </div>
+      </div>
+      
+      ${analysis.summary ? `
+      <div class="summary-section" style="page-break-inside: avoid; break-inside: avoid; margin-bottom: 25px; padding: 20px; background: #eff6ff; border-left: 5px solid #2563eb; border-radius: 8px;">
+        <h2 style="font-size: 18px; font-weight: bold; color: #1e40af; margin-bottom: 15px; margin-top: 0;">📋 Summary of Key Findings</h2>
+        <div style="font-size: 14px; color: #1e293b; line-height: 1.8; text-align: justify; page-break-inside: avoid; break-inside: avoid;">
+          ${formatContentForPDF(analysis.summary)}
+        </div>
+      </div>
+      ` : ''}
+      
+      ${analysis.interpretation ? `
+      <div class="interpretation-section" style="page-break-inside: avoid; break-inside: avoid; margin-bottom: 25px; padding: 20px; background: #fef3c7; border-left: 5px solid #d97706; border-radius: 8px;">
+        <h2 style="font-size: 18px; font-weight: bold; color: #92400e; margin-bottom: 15px; margin-top: 0;">🔍 Interpretation of Abnormal Values</h2>
+        <div style="font-size: 14px; color: #1e293b; line-height: 1.8; text-align: justify; page-break-inside: avoid; break-inside: avoid;">
+          ${formatContentForPDF(analysis.interpretation)}
+        </div>
+      </div>
+      ` : ''}
+      
+      ${analysis.clinical ? `
+      <div class="clinical-section" style="page-break-inside: avoid; break-inside: avoid; margin-bottom: 25px; padding: 20px; background: #f0fdf4; border-left: 5px solid #059669; border-radius: 8px;">
+        <h2 style="font-size: 18px; font-weight: bold; color: #047857; margin-bottom: 15px; margin-top: 0;">🏥 Clinical Significance of Results</h2>
+        <div style="font-size: 14px; color: #1e293b; line-height: 1.8; text-align: justify; page-break-inside: avoid; break-inside: avoid;">
+          ${formatContentForPDF(analysis.clinical)}
+        </div>
+      </div>
+      ` : ''}
+      
+      ${analysis.recommendations ? `
+      <div class="recommendation-block" style="page-break-inside: avoid; break-inside: avoid; margin-bottom: 25px; padding: 20px; background: #fef2f2; border-left: 5px solid #dc2626; border-radius: 8px;">
+        <h2 style="font-size: 18px; font-weight: bold; color: #991b1b; margin-bottom: 15px; margin-top: 0;">💡 Recommendations for Follow-up</h2>
+        <div style="font-size: 14px; color: #1e293b; line-height: 1.8; text-align: justify; page-break-inside: avoid; break-inside: avoid;">
+          ${formatContentForPDF(analysis.recommendations, 'recommendations')}
+        </div>
+      </div>
+      ` : ''}
+      
+      ${analysis.insights ? `
+      <div class="insight-block" style="page-break-inside: avoid; break-inside: avoid; margin-bottom: 25px; padding: 20px; background: #f3e8ff; border-left: 5px solid #7c3aed; border-radius: 8px;">
+        <h2 style="font-size: 18px; font-weight: bold; color: #5b21b6; margin-bottom: 15px; margin-top: 0;">💊 General Health Insights</h2>
+        <div style="font-size: 14px; color: #1e293b; line-height: 1.8; text-align: justify; word-wrap: break-word; hyphens: auto; page-break-inside: avoid; break-inside: avoid;">
+          ${formatContentForPDF(analysis.insights, 'insights')}
+        </div>
+      </div>
+      ` : ''}
+      
+      <div style="page-break-inside: avoid; break-inside: avoid; margin-top: 40px; padding: 25px; background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); border: 2px solid #cbd5e1; border-radius: 12px; text-align: center; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+        <div style="margin-bottom: 15px;">
+          <div style="display: inline-block; padding: 8px 16px; background: #1e293b; color: white; border-radius: 20px; font-size: 14px; font-weight: 600; margin-bottom: 10px;">
+            🤖 AI-Generated Analysis Report
+          </div>
+        </div>
+        
+        <div style="margin-bottom: 15px;">
+          <p style="font-size: 16px; font-weight: 600; color: #1e293b; margin: 0 0 8px 0; line-height: 1.4;">
+            Generated by Google Gemini AI Technology
+          </p>
+          <p style="font-size: 14px; color: #475569; margin: 0; line-height: 1.5;">
+            This comprehensive blood test analysis was powered by advanced artificial intelligence
+          </p>
+        </div>
+        
+        <div style="display: flex; justify-content: center; align-items: center; gap: 20px; margin-bottom: 15px; flex-wrap: wrap;">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span style="color: #059669; font-size: 16px;">✓</span>
+            <span style="font-size: 12px; color: #64748b;">AI-Powered Analysis</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span style="color: #059669; font-size: 16px;">✓</span>
+            <span style="font-size: 12px; color: #64748b;">Medical Knowledge Base</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span style="color: #059669; font-size: 16px;">✓</span>
+            <span style="font-size: 12px; color: #64748b;">Comprehensive Review</span>
+          </div>
+        </div>
+        
+        <div style="border-top: 1px solid #cbd5e1; padding-top: 15px;">
+          <p style="font-size: 13px; color: #64748b; margin: 0 0 8px 0; line-height: 1.4;">
+            <strong>Important Notice:</strong> This analysis is generated by artificial intelligence and should be used as a reference only.
+          </p>
+          <p style="font-size: 12px; color: #94a3b8; margin: 0; line-height: 1.4;">
+            For medical decisions, diagnosis, and treatment plans, please consult with a qualified healthcare professional.
+          </p>
+        </div>
+        
+        <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #cbd5e1;">
+          <p style="font-size: 11px; color: #94a3b8; margin: 0; line-height: 1.3;">
+            Report generated on ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()} | 
+            AI-Based Blood Test Analysis System v1.0
+          </p>
         </div>
       </div>
     `;
-
-    // Clone only the analysis content (not nav/buttons/success)
-    const analysisContent = analysisContentRef.current?.cloneNode(true);
-    if (analysisContent) {
-      analysisContent.querySelectorAll('.analysis-nav-row, .success-message').forEach(el => el.remove());
-      // Add a class for page break after each main section (not every header)
-      analysisContent.querySelectorAll('.pdf-section').forEach(section => {
-        section.classList.add('pdf-page-break');
-      });
-      // Add section padding and ensure headers stay with content
-      analysisContent.querySelectorAll('.pdf-section').forEach(section => {
-        section.style.padding = '24px 0';
-        section.style.pageBreakInside = 'avoid';
-      });
-      analysisContent.style.wordBreak = 'break-word';
-      analysisContent.style.overflowWrap = 'break-word';
-      tempDiv.appendChild(analysisContent);
+    
+    tempDiv.innerHTML = pdfContent;
+    
+    // Get full_name from context
+    let fullName = 'report';
+    if (user?.full_name) {
+      fullName = user.full_name.replace(/\s+/g, '_');
     }
-
-    // Add custom style for page breaks
-    const style = document.createElement('style');
-    style.innerHTML = `
-      .pdf-page-break { page-break-after: always; }
-      .pdf-section { margin-bottom: 24px; }
-    `;
-    tempDiv.appendChild(style);
-
+    
     html2pdf().set({
-      margin: 0.5,
-      filename: 'blood_analysis_result.pdf',
+      margin: [0.75, 0.5, 0.75, 0.5], // [top, right, bottom, left] margins
+      filename: `${fullName}_complete_blood_analysis.pdf`,
       image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2 },
-      jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
-      pagebreak: { mode: ['css', 'legacy'], avoid: ['h2', 'h3', '.pdf-section'] }
+      html2canvas: { 
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        letterRendering: true
+      },
+      jsPDF: { 
+        unit: 'in', 
+        format: 'a4', 
+        orientation: 'portrait',
+        compress: true
+      },
+      pagebreak: { 
+        mode: ['avoid-all', 'css', 'legacy'],
+        before: '.page-break-before',
+        after: '.page-break-after',
+        avoid: '.recommendation-block, .insight-block, .summary-section, .interpretation-section, .clinical-section'
+      }
     }).from(tempDiv).save();
   };
 

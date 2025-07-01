@@ -186,10 +186,20 @@ async def analyze_blood_report(
             query = "Summarise my Blood Test Report"
         # Run crew in a separate thread to avoid blocking FastAPI event loop
         result = await asyncio.to_thread(run_crew, query.strip(), file_path)
+        # Always return a structured analysis result
+        if isinstance(result, dict):
+            analysis_result = result.get("result", "No analysis result was generated.")
+            fallback = result.get("fallback", False)
+            status = result.get("status", "processed")
+        else:
+            analysis_result = str(result)
+            fallback = True
+            status = "error"
         return {
-            "status": "success",
+            "status": status,
             "query": query.strip(),
-            "analysis": str(result),
+            "analysis": analysis_result,
+            "fallback": fallback,
             "file_processed": file.filename
         }
     except Exception as e:
@@ -263,20 +273,27 @@ def run_crew(query: str, file_path: str):
     """Runs the complete medical analysis Crew process."""
     try:
         from crewai import Crew, Process
-        from agents import doctor, verifier, nutritionist, exercise_specialist
+        from agents import GEMINI_AVAILABLE, doctor, verifier, nutritionist, exercise_specialist
         from task import create_help_patients_task
-        
+        # Check if Gemini is available before creating Crew
+        if not GEMINI_AVAILABLE:
+            return {"status": "error", "result": "Gemini AI is not available. Please check your API key configuration.", "fallback": True}
         # Create task with doctor agent
         help_patients_task = create_help_patients_task(doctor)
-        
+        # At this point, agents are guaranteed to be proper BaseAgent instances
         medical_crew = Crew(
-            agents=[doctor, verifier, nutritionist, exercise_specialist],
+            agents=[doctor, verifier, nutritionist, exercise_specialist],  # type: ignore
             tasks=[help_patients_task],
             process=Process.sequential
         )
-        return medical_crew.kickoff(inputs={"query": query, "file_path": file_path})
+        result = medical_crew.kickoff(inputs={"query": query, "file_path": file_path})
+        print(f"[run_crew] Raw CrewAI result: {result}")  # Debug log
+        # If result is empty or None, return fallback
+        if not result or (isinstance(result, str) and not result.strip()):
+            return {"status": "error", "result": "No analysis result was generated. Please try again.", "fallback": True}
+        return {"status": "processed", "result": str(result), "fallback": False}
     except Exception as e:
-        return f"Error in analysis: {str(e)}"
+        return {"status": "error", "result": f"Error in analysis: {str(e)}", "fallback": True}
 
 # Server startup
 if __name__ == "__main__":
