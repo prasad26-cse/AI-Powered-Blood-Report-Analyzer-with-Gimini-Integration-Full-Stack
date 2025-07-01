@@ -260,6 +260,10 @@ Instantiate the class and use the method properly, or make it a static/class met
   
 ---
 
+## Database:
+![image](https://github.com/user-attachments/assets/18e3b54c-6c23-4b55-baf1-2d21d31ee383)
+
+
 ## ✅ Finalr Results:
 
 # 1.User Register
