@@ -72,19 +72,19 @@ def process_blood_report(self, report_id: int, query_text: str):
             GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
             if GEMINI_API_KEY:
                 print("[CELERY] Using enhanced Gemini AI analysis...")
-                result = enhanced_simple_blood_analysis(str(report.file_path), query_text)
+                result = enhanced_enhanced_simple_blood_analysis(str(report.file_path), query_text)
                 if result["status"] == "processed" and not result.get("fallback", True):
                     print("[CELERY] Enhanced Gemini analysis completed successfully!")
                 else:
                     print("[CELERY] Enhanced Gemini analysis failed, using fallback...")
-                    result = enhanced_simple_blood_analysis(str(report.file_path), query_text)
+                    result = enhanced_enhanced_simple_blood_analysis(str(report.file_path), query_text)
             else:
                 print("[CELERY] Gemini API key not found. Using fallback analysis.")
-                result = enhanced_simple_blood_analysis(str(report.file_path), query_text)
+                result = enhanced_enhanced_simple_blood_analysis(str(report.file_path), query_text)
         except Exception as ai_error:
             print(f"[CELERY] Enhanced Gemini analysis failed: {ai_error}")
             print("[CELERY] Falling back to simple analysis due to error above.")
-            result = enhanced_simple_blood_analysis(str(report.file_path), query_text)
+            result = enhanced_enhanced_simple_blood_analysis(str(report.file_path), query_text)
         
         # Calculate processing time
         processing_time = time.time() - start_time

@@ -326,7 +326,7 @@ const Dashboard = () => {
       } else if (currentSection && trimmedLine) {
         // Remove lines that are just single letters or stray bullets
         if (!/^([A-Z]|[•\-*])$/.test(trimmedLine)) {
-          sectionContent.push(line);
+        sectionContent.push(line);
         }
       }
     });
@@ -455,7 +455,7 @@ const Dashboard = () => {
         <div style="font-size: 18px; font-weight: 600; color: #475569; margin-bottom: 8px; text-align: center;">${report.filename}</div>
         <div style="font-size: 14px; color: #64748b; text-align: center;">
           Uploaded: ${new Date(report.upload_date).toLocaleDateString()} | Generated: ${new Date().toLocaleDateString()}
-        </div>
+      </div>
       </div>
       
       ${analysis.summary ? `
