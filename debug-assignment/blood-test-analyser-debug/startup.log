@@ -1,0 +1,113 @@
+2025-06-30 08:35:54,084 - httpx - INFO - HTTP Request: GET https://raw.githubusercontent.com/BerriAI/litellm/main/model_prices_and_context_window.json "HTTP/1.1 200 OK"
+2025-06-30 08:35:57,966 - __main__ - ERROR - Missing packages: google-generativeai
+2025-06-30 08:35:57,967 - __main__ - INFO - Run: pip install -r requirements.txt
+2025-06-30 08:37:41,778 - httpx - INFO - HTTP Request: GET https://raw.githubusercontent.com/BerriAI/litellm/main/model_prices_and_context_window.json "HTTP/1.1 200 OK"
+2025-06-30 08:37:45,464 - __main__ - ERROR - Missing packages: google-generativeai
+2025-06-30 08:37:45,465 - __main__ - INFO - Run: pip install -r requirements.txt
+2025-06-30 08:46:37,135 - __main__ - INFO - Starting Blood Test Analyzer...
+2025-06-30 08:46:37,136 - __main__ - INFO - Checking dependencies...
+2025-06-30 08:46:37,812 - __main__ - INFO - [OK] fastapi
+2025-06-30 08:46:37,940 - __main__ - INFO - [OK] uvicorn
+2025-06-30 08:46:38,208 - __main__ - INFO - [OK] sqlalchemy
+2025-06-30 08:46:38,213 - __main__ - INFO - [OK] celery
+2025-06-30 08:46:38,310 - __main__ - INFO - [OK] redis
+2025-06-30 08:46:42,677 - httpx - INFO - HTTP Request: GET https://raw.githubusercontent.com/BerriAI/litellm/main/model_prices_and_context_window.json "HTTP/1.1 200 OK"
+2025-06-30 08:46:46,200 - __main__ - INFO - [OK] crewai
+2025-06-30 08:46:46,210 - __main__ - INFO - [OK] langchain
+2025-06-30 08:46:47,030 - __main__ - INFO - [OK] google-generativeai
+2025-06-30 08:46:47,030 - __main__ - INFO - All dependencies are installed
+2025-06-30 08:46:47,030 - __main__ - INFO - Checking environment configuration...
+2025-06-30 08:46:47,031 - __main__ - WARNING - .env file not found
+2025-06-30 08:46:47,031 - __main__ - INFO - Copy env.template to .env and configure your settings
+2025-06-30 08:46:47,031 - __main__ - ERROR - Failed to start services
+2025-06-30 08:47:44,201 - __main__ - INFO - Starting Blood Test Analyzer...
+2025-06-30 08:47:44,201 - __main__ - INFO - Checking dependencies...
+2025-06-30 08:47:44,850 - __main__ - INFO - [OK] fastapi
+2025-06-30 08:47:44,956 - __main__ - INFO - [OK] uvicorn
+2025-06-30 08:47:45,263 - __main__ - INFO - [OK] sqlalchemy
+2025-06-30 08:47:45,267 - __main__ - INFO - [OK] celery
+2025-06-30 08:47:45,362 - __main__ - INFO - [OK] redis
+2025-06-30 08:47:50,367 - httpx - INFO - HTTP Request: GET https://raw.githubusercontent.com/BerriAI/litellm/main/model_prices_and_context_window.json "HTTP/1.1 200 OK"
+2025-06-30 08:47:54,235 - __main__ - INFO - [OK] crewai
+2025-06-30 08:47:54,245 - __main__ - INFO - [OK] langchain
+2025-06-30 08:47:55,020 - __main__ - INFO - [OK] google-generativeai
+2025-06-30 08:47:55,020 - __main__ - INFO - All dependencies are installed
+2025-06-30 08:47:55,020 - __main__ - INFO - Checking environment configuration...
+2025-06-30 08:47:55,021 - __main__ - WARNING - .env file not found
+2025-06-30 08:47:55,021 - __main__ - INFO - Copy env.template to .env and configure your settings
+2025-06-30 08:47:55,021 - __main__ - ERROR - Failed to start services
+2025-06-30 08:49:03,156 - __main__ - INFO - Starting Blood Test Analyzer...
+2025-06-30 08:49:03,156 - __main__ - INFO - Checking dependencies...
+2025-06-30 08:49:03,685 - __main__ - INFO - [OK] fastapi
+2025-06-30 08:49:03,770 - __main__ - INFO - [OK] uvicorn
+2025-06-30 08:49:04,020 - __main__ - INFO - [OK] sqlalchemy
+2025-06-30 08:49:04,025 - __main__ - INFO - [OK] celery
+2025-06-30 08:49:04,096 - __main__ - INFO - [OK] redis
+2025-06-30 08:50:25,369 - __main__ - INFO - Starting Blood Test Analyzer...
+2025-06-30 08:50:25,370 - __main__ - INFO - Checking dependencies...
+2025-06-30 08:50:25,925 - __main__ - INFO - [OK] fastapi
+2025-06-30 08:50:26,032 - __main__ - INFO - [OK] uvicorn
+2025-06-30 08:50:26,444 - __main__ - INFO - [OK] sqlalchemy
+2025-06-30 08:50:26,449 - __main__ - INFO - [OK] celery
+2025-06-30 08:50:26,540 - __main__ - INFO - [OK] redis
+2025-06-30 08:50:30,729 - httpx - INFO - HTTP Request: GET https://raw.githubusercontent.com/BerriAI/litellm/main/model_prices_and_context_window.json "HTTP/1.1 200 OK"
+2025-06-30 08:50:34,313 - __main__ - INFO - [OK] crewai
+2025-06-30 08:50:34,324 - __main__ - INFO - [OK] langchain
+2025-06-30 08:50:34,928 - __main__ - INFO - [OK] google-generativeai
+2025-06-30 08:50:34,928 - __main__ - INFO - All dependencies are installed
+2025-06-30 08:50:34,929 - __main__ - INFO - Checking environment configuration...
+2025-06-30 08:50:34,934 - __main__ - WARNING - SECRET_KEY not configured - using default
+2025-06-30 08:50:34,935 - __main__ - WARNING - GEMINI_API_KEY not configured - AI features will be limited
+2025-06-30 08:50:34,935 - __main__ - INFO - Get your API key from: https://makersuite.google.com/app/apikey
+2025-06-30 08:50:34,935 - __main__ - INFO - Using SQLite database for development
+2025-06-30 08:50:34,935 - __main__ - INFO - Environment configuration is valid
+2025-06-30 08:50:34,936 - __main__ - INFO - Running performance optimization...
+2025-06-30 08:50:34,944 - __main__ - ERROR - Performance optimization failed: No module named 'psutil'
+2025-06-30 08:50:34,945 - __main__ - INFO - Starting Redis server...
+2025-06-30 08:50:34,960 - __main__ - ERROR - Redis not found. Please install Redis or use Docker.
+2025-06-30 08:50:34,960 - __main__ - INFO - Starting Celery worker...
+2025-06-30 08:50:37,977 - __main__ - ERROR - Celery failed to start: Usage: celery [OPTIONS] COMMAND [ARGS]...
+Try 'celery --help' for help.
+
+Error: 
+Unable to load celery application.
+While trying to load the module celery_app the following error occurred:
+Traceback (most recent call last):
+  File "C:\Users\VICTUS\OneDrive\Desktop\AI_Assignment\.venv\Lib\site-packages\celery\bin\celery.py", line 141, in celery
+    app = find_app(app)
+  File "C:\Users\VICTUS\OneDrive\Desktop\AI_Assignment\.venv\Lib\site-packages\celery\app\utils.py", line 383, in find_app
+    sym = symbol_by_name(app, imp=imp)
+  File "C:\Users\VICTUS\OneDrive\Desktop\AI_Assignment\.venv\Lib\site-packages\kombu\utils\imports.py", line 59, in symbol_by_name
+    module = imp(module_name, package=package, **kwargs)
+  File "C:\Users\VICTUS\OneDrive\Desktop\AI_Assignment\.venv\Lib\site-packages\celery\utils\imports.py", line 109, in import_from_cwd
+    return imp(module, package=package)
+  File "C:\Users\VICTUS\AppData\Local\Programs\Python\Python313\Lib\importlib\__init__.py", line 88, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 1026, in exec_module
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "C:\Users\VICTUS\OneDrive\Desktop\AI_Assignment\debug-assignment\blood-test-analyser-debug\celery_app.py", line 4, in <module>
+    from database import SessionLocal, BloodReport, QueryLog
+  File "C:\Users\VICTUS\OneDrive\Desktop\AI_Assignment\debug-assignment\blood-test-analyser-debug\database.py", line 98
+    global engine, SessionLocal
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+SyntaxError: name 'engine' is used prior to global declaration
+
+
+2025-06-30 08:50:37,977 - __main__ - INFO - Starting FastAPI backend...
+2025-06-30 08:50:42,989 - __main__ - ERROR - Backend failed to start: WARNING:__main__:Database not available: name 'engine' is used prior to global declaration (database.py, line 98)
+WARNING:__main__:Celery not available: name 'engine' is used prior to global declaration (database.py, line 98)
+Traceback (most recent call last):
+  File "C:\Users\VICTUS\OneDrive\Desktop\AI_Assignment\debug-assignment\blood-test-analyser-debug\main_optimized.py", line 374, in <module>
+    current_user: User = Depends(get_current_user),
+                  ^^^^
+NameError: name 'User' is not defined
+
+2025-06-30 08:50:42,990 - __main__ - INFO - Starting React frontend...
+2025-06-30 08:50:42,998 - __main__ - ERROR - Error starting frontend: [WinError 2] The system cannot find the file specified
+2025-06-30 08:50:42,998 - __main__ - ERROR - Failed to start services: Redis, Celery, Backend, Frontend
+2025-06-30 08:50:42,999 - __main__ - ERROR - Failed to start services

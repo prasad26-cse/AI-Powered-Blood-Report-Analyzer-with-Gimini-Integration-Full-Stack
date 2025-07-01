@@ -1,0 +1,100 @@
+version: '3.8'
+
+services:
+  # MySQL Database
+  db:
+    image: mysql:8.0
+    container_name: bloodreport_mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: bloodreport_ai
+      MYSQL_USER: bloodreport_user
+      MYSQL_PASSWORD: bloodreport_password
+      MYSQL_ROOT_PASSWORD: root_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - bloodreport_network
+
+  # Redis
+  redis:
+    image: redis:6-alpine
+    container_name: bloodreport_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - bloodreport_network
+
+  # FastAPI Backend
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: bloodreport_backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=mysql://bloodreport_user:bloodreport_password@db/bloodreport_ai
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - SECRET_KEY=your-super-secret-key-change-this-in-production
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    volumes:
+      - ./data:/app/data
+    depends_on:
+      - db
+      - redis
+    networks:
+      - bloodreport_network
+
+  # Celery Worker
+  celery:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: bloodreport_celery
+    restart: unless-stopped
+    command: celery -A celery_app worker --loglevel=info
+    environment:
+      - DATABASE_URL=mysql://bloodreport_user:bloodreport_password@db/bloodreport_ai
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - SECRET_KEY=your-super-secret-key-change-this-in-production
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    volumes:
+      - ./data:/app/data
+    depends_on:
+      - db
+      - redis
+    networks:
+      - bloodreport_network
+
+  # React Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.frontend
+    container_name: bloodreport_frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - REACT_APP_API_URL=http://localhost:8000
+    depends_on:
+      - backend
+    networks:
+      - bloodreport_network
+
+volumes:
+  mysql_data:
+  redis_data:
+
+networks:
+  bloodreport_network:
+    driver: bridge 
