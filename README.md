@@ -1,6 +1,6 @@
 # 🩸 Blood Test Analyser (Gemini AI Powered)
 
-A modern web application for uploading, analyzing, and interpreting blood test reports using Google Gemini AI and CrewAI agents. Built with FastAPI, React, Celery, and Redis.
+A modern web application for uploading, analyzing, and interpreting blood test reports using Google Gemini AI. Built with FastAPI, React, Celery, and Redis.
 
 ---
 
